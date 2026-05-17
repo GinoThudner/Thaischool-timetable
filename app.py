@@ -358,6 +358,7 @@ with st.form("review_form"):
     email = st.text_input("Email *", placeholder="example@email.com")
     rating = st.slider("คะแนน", 1, 5, 5)
     comment = st.text_area("ความคิดเห็น *", placeholder="บอกเล่าประสบการณ์การใช้งานหน่อยนะคะ")
+    review_image = st.file_uploader("📷 แนบรูปประกอบ (ไม่บังคับ)", type=["jpg", "jpeg", "png"])
     submitted = st.form_submit_button("📝 ส่งรีวิว", use_container_width=True)
 
     if submitted:
@@ -367,10 +368,25 @@ with st.form("review_form"):
             st.error("กรุณากรอกความคิดเห็นด้วยนะคะ")
         else:
             try:
+                image_url = None
+                if review_image:
+                    # อัปโหลดรูปไปที่ Supabase Storage
+                    ext = review_image.name.split(".")[-1].lower()
+                    file_name = f"{email.replace('@','_')}_{int(__import__('time').time())}.{ext}"
+                    review_image.seek(0)
+                    file_bytes = review_image.read()
+                    supabase_client.storage.from_("review-images").upload(
+                        file_name,
+                        file_bytes,
+                        {"content-type": f"image/{ext}"}
+                    )
+                    image_url = supabase_client.storage.from_("review-images").get_public_url(file_name)
+
                 supabase_client.table("reviews").insert({
                     "email": email.strip(),
                     "rating": rating,
-                    "comment": comment.strip()
+                    "comment": comment.strip(),
+                    "image_url": image_url
                 }).execute()
                 st.success("✅ ขอบคุณสำหรับรีวิวนะคะ!")
             except Exception as e:
@@ -398,6 +414,8 @@ try:
                 with col_a:
                     st.markdown(f"**{hidden_email}**  {stars}")
                     st.write(r["comment"])
+                    if r.get("image_url"):
+                        st.image(r["image_url"], width=300)
                 with col_b:
                     st.caption(r["created_at"][:10])
                 st.divider()
