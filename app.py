@@ -378,7 +378,7 @@ with st.form("review_form"):
 
 st.subheader("💬 รีวิวจากผู้ใช้งาน")
 try:
-    result = supabase_client.table("reviews")\
+    result = supabase_client.schema("public").table("reviews")\
         .select("email, rating, comment, created_at")\
         .order("created_at", desc=True)\
         .limit(20)\
