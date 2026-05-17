@@ -406,7 +406,7 @@ with st.form("review_form"):
 st.subheader("💬 รีวิวจากผู้ใช้งาน")
 try:
     result = supabase_client.schema("public").table("reviews")\
-        .select("email, rating, comment, created_at")\
+        .select("email, rating, comment, created_at, image_url")\
         .order("created_at", desc=True)\
         .limit(20)\
         .execute()
@@ -426,10 +426,7 @@ try:
                     st.markdown(f"**{hidden_email}**  {stars}")
                     st.write(r["comment"])
                     if r.get("image_url"):
-                        try:
-                            st.image(r["image_url"], width=300)
-                        except:
-                            st.markdown(f"[ดูรูปภาพ]({r['image_url']})")
+                        st.image(r["image_url"], width=300)
                 with col_b:
                     st.caption(r["created_at"][:10])
                 st.divider()
