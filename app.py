@@ -369,7 +369,7 @@ with st.form("review_form"):
     email = st.text_input("Email *", placeholder="example@email.com")
     rating = st.slider("คะแนน", 1, 5, 5)
     comment = st.text_area("ความคิดเห็น *", placeholder="บอกเล่าประสบการณ์การใช้งานหน่อยนะคะ")
-    review_image = None
+    review_image = st.file_uploader("📷 แนบรูปประกอบ (ไม่บังคับ)", type=["jpg", "jpeg", "png"])
     submitted = st.form_submit_button("📝 ส่งรีวิว", use_container_width=True)
 
     if submitted:
