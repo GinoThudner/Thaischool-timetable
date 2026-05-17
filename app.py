@@ -426,7 +426,10 @@ try:
                     st.markdown(f"**{hidden_email}**  {stars}")
                     st.write(r["comment"])
                     if r.get("image_url"):
-                        st.image(r["image_url"], width=300)
+                        try:
+                            st.image(r["image_url"], width=300)
+                        except:
+                            st.markdown(f"[ดูรูปภาพ]({r['image_url']})")
                 with col_b:
                     st.caption(r["created_at"][:10])
                 st.divider()
