@@ -5,9 +5,14 @@ import json
 import os
 from dotenv import load_dotenv
 from PIL import Image
+from supabase import create_client
 
 load_dotenv()
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+supabase_client = create_client(
+    os.getenv("SUPABASE_URL"),
+    os.getenv("SUPABASE_KEY")
+)
 
 st.set_page_config(page_title="แปลงตารางเรียน", page_icon="📚", layout="wide")
 st.title("📚 แปลงตารางเรียน")
@@ -342,3 +347,58 @@ if "edited" in st.session_state:
             mime="image/png",
             use_container_width=True
         )
+
+# --------------------- ระบบรีวิว ---------------------
+st.divider()
+st.subheader("⭐ รีวิวการใช้งาน")
+
+with st.form("review_form"):
+    st.caption("📧 Email ใช้เพื่อยืนยันว่าเป็นคนจริงเท่านั้น ไม่นำไปใช้เพื่อวัตถุประสงค์อื่น")
+    email = st.text_input("Email *", placeholder="example@email.com")
+    rating = st.slider("คะแนน", 1, 5, 5)
+    comment = st.text_area("ความคิดเห็น *", placeholder="บอกเล่าประสบการณ์การใช้งานหน่อยนะคะ")
+    submitted = st.form_submit_button("📝 ส่งรีวิว", use_container_width=True)
+
+    if submitted:
+        if not email or "@" not in email:
+            st.error("กรุณากรอก Email ให้ถูกต้องค่ะ")
+        elif not comment.strip():
+            st.error("กรุณากรอกความคิดเห็นด้วยนะคะ")
+        else:
+            try:
+                supabase_client.table("reviews").insert({
+                    "email": email.strip(),
+                    "rating": rating,
+                    "comment": comment.strip()
+                }).execute()
+                st.success("✅ ขอบคุณสำหรับรีวิวนะคะ!")
+            except Exception as e:
+                st.error(f"เกิดข้อผิดพลาด: {e}")
+
+st.subheader("💬 รีวิวจากผู้ใช้งาน")
+try:
+    result = supabase_client.table("reviews")\
+        .select("email, rating, comment, created_at")\
+        .order("created_at", desc=True)\
+        .limit(20)\
+        .execute()
+    
+    reviews = result.data
+    if not reviews:
+        st.info("ยังไม่มีรีวิวค่ะ เป็นคนแรกที่รีวิวได้เลย!")
+    else:
+        for r in reviews:
+            stars = "⭐" * r["rating"]
+            em = r["email"]
+            at = em.index("@")
+            hidden_email = em[:2] + "***" + em[at:]
+            with st.container():
+                col_a, col_b = st.columns([3, 1])
+                with col_a:
+                    st.markdown(f"**{hidden_email}**  {stars}")
+                    st.write(r["comment"])
+                with col_b:
+                    st.caption(r["created_at"][:10])
+                st.divider()
+except Exception as e:
+    st.error(f"โหลดรีวิวไม่ได้: {e}")
