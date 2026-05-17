@@ -148,6 +148,7 @@ if uploaded:
                 st.session_state["edited"] = json.loads(json.dumps(data))
             except Exception as e:
                 st.error(f"เกิดข้อผิดพลาด: {e}")
+                st.write("URL:", os.getenv("SUPABASE_URL"))
 
 # แสดงตาราง
 if "edited" in st.session_state:
